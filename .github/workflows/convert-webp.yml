@@ -3,7 +3,7 @@ name: Convert Images to WebP
 on:
   push:
     paths:
-      - "images/**"
+      - "Image/**"
 
 jobs:
   convert:
@@ -18,7 +18,7 @@ jobs:
       - name: Convert to WebP
         run: |
           mkdir -p webp
-          for file in images/*.{jpg,png}; do
+          for file in images/*.{jpg,png.JPG}; do
             [ -e "$file" ] || continue
             filename=$(basename "$file")
             cwebp -q 80 "$file" -o "webp/${filename%.*}.webp"
