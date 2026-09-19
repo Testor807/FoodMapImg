@@ -2,39 +2,50 @@ name: Convert Images to WebP
 
 on:
   push:
+    branches:
+      - main
     paths:
-      - "images/**"
+      - 'Image/**'
 
 jobs:
   convert:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Install cwebp
-        run: sudo apt-get install -y webp
-
-      - name: Clean old WebP
-        run: rm -rf webp/*
-
-      - name: Convert to WebP
+      - name: Install webp tool
         run: |
-          mkdir -p webp
-          for file in images/*.{jpg,png}; do
-            [ -e "$file" ] || continue
-            filename=$(basename "$file")
-            cwebp -q 80 "$file" -o "webp/${filename%.*}.webp"
+          sudo apt-get update
+          sudo apt-get install -y webp
+
+      - name: Create webp directory if not exists
+        run: mkdir -p webp
+
+      - name: Convert Images to WebP
+        run: |
+          # 尋找 Image 資料夾內的 jpg, jpeg, png, JPG, JPEG, PNG 檔案並轉換
+          find Image -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) | while read -r img; do
+            # 取得不含路徑的檔名
+            filename=$(basename "$img")
+            # 取得不含副檔名的主檔名
+            name="${filename%.*}"
+            # 轉換圖片並輸出至 webp/ 資料夾，品質設定為 80
+            cwebp -q 80 "$img" -o "webp/${name}.webp"
           done
 
-      - name: Commit WebP Files
+      - name: Commit and push converted WebP files
         run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "actions@github.com"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add webp/
-          if ! git diff --cached --quiet; then
-            git commit -m "Auto convert to WebP"
-            git push
+          # 檢查是否有檔案更新，若有則 Commit & Push
+          if git diff --staged --quiet; then
+            echo "沒有需要更新的 WebP 圖片"
           else
-            echo "No changes to commit"
+            git commit -m "auto: convert uploaded images to webp"
+            git push
           fi
