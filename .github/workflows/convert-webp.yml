@@ -6,6 +6,13 @@ on:
       - main
     paths:
       - 'Image/**'
+      - '*.jpg'
+      - '*.jpeg'
+      - '*.png'
+      - '*.JPG'
+      - '*.JPEG'
+      - '*.PNG'
+  workflow_dispatch: # 啟用手動觸發按鈕
 
 jobs:
   convert:
@@ -27,13 +34,9 @@ jobs:
 
       - name: Convert Images to WebP
         run: |
-          # 尋找 Image 資料夾內的 jpg, jpeg, png, JPG, JPEG, PNG 檔案並轉換
-          find Image -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) | while read -r img; do
-            # 取得不含路徑的檔名
+          find . -maxdepth 2 \( -path "./Image/*" -o -path "./*" \) -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) | while read -r img; do
             filename=$(basename "$img")
-            # 取得不含副檔名的主檔名
             name="${filename%.*}"
-            # 轉換圖片並輸出至 webp/ 資料夾，品質設定為 80
             cwebp -q 80 "$img" -o "webp/${name}.webp"
           done
 
@@ -42,7 +45,6 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add webp/
-          # 檢查是否有檔案更新，若有則 Commit & Push
           if git diff --staged --quiet; then
             echo "沒有需要更新的 WebP 圖片"
           else
