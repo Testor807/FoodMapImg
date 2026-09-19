@@ -3,7 +3,7 @@ name: Convert Images to WebP
 on:
   push:
     paths:
-      - "Image/**"
+      - "images/**"
 
 jobs:
   convert:
@@ -15,16 +15,19 @@ jobs:
       - name: Install cwebp
         run: sudo apt-get install -y webp
 
+      - name: Clean old WebP
+        run: rm -rf webp/*
+
       - name: Convert to WebP
         run: |
           mkdir -p webp
-          for file in Image/*.{jpg,png}; do
+          for file in images/*.{jpg,png}; do
             [ -e "$file" ] || continue
             filename=$(basename "$file")
             cwebp -q 80 "$file" -o "webp/${filename%.*}.webp"
           done
 
-       - name: Commit WebP Files
+      - name: Commit WebP Files
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
@@ -35,5 +38,3 @@ jobs:
           else
             echo "No changes to commit"
           fi
-      - name: Clean old WebP
-        run: rm -rf webp/*
